@@ -1960,7 +1960,10 @@ let start ~__context ~self paused =
 				raise e
 		);
 	(* XXX: if the guest crashed or shutdown immediately then it may be offline now *)
-	assert (Db.VM.get_power_state ~__context ~self = (if paused then `Paused else `Running))
+	let powerstate = Db.VM.get_power_state ~__context ~self in
+	if powerstate <> (if paused then `Paused else `Running)
+	then failwith (Printf.sprintf "VM went into an unexpected state of %s" (Record_util.power_state_to_string powerstate))
+
 
 let start ~__context ~self paused =
 	transform_xenops_exn ~__context
