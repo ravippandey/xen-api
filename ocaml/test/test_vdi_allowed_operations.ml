@@ -185,15 +185,6 @@ let test_ca126097 () =
 				~value:["mytask", `copy])
 		`clone None;
 
-	(* Attempting to snapshot a VDI being copied should be allowed. *)
-	run_assert_equal_with_vdi ~__context
-		~vdi_fun:(fun vdi_ref ->
-			let (_: API.ref_VBD) = make_vbd ~__context ~vDI:vdi_ref ~currently_attached:true ~mode:`RO () in
-			Db.VDI.set_current_operations ~__context
-				~self:vdi_ref
-				~value:["mytask", `copy])
-		`snapshot (Some (Api_errors.operation_not_allowed, []))
-
 let test_can_revert_to_snapshot () =
 	let __context = Mock.make_context_with_new_db "Mock context" in
 
