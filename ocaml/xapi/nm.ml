@@ -329,6 +329,11 @@ let determine_static_routes net_rc =
 	else
 		[]
 
+let check_fcoe_support ~__context device =
+	debug "Checking fcoe support for %s" device;
+	let dbg = Context.string_of_task __context in
+	Net.Interface.is_fcoe_supported dbg ~name:device
+
 let bring_pif_up ~__context ?(management_interface=false) (pif: API.ref_PIF) =
 	with_local_lock (fun () ->
 		let dbg = Context.string_of_task __context in
@@ -469,6 +474,15 @@ let bring_pif_up ~__context ?(management_interface=false) (pif: API.ref_PIF) =
 			with _ ->
 				debug "could not update MTU field on PIF %s" rc.API.pIF_uuid
 			);
+
+			let device = rc.API.pIF_device in
+			let physical = Net.Interface.is_physical dbg device in
+			if physical then
+			begin
+				debug "This interface is physical";
+				let fcoe_support = check_fcoe_support __context device in
+				debug "Setting fcoe_support to %s" (string_of_bool fcoe_support)
+			end;
 
 			Xapi_mgmt_iface.on_dom0_networking_change ~__context
 		end
