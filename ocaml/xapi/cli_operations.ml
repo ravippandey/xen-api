@@ -2498,7 +2498,14 @@ let vm_migrate printer rpc session_id params =
 			let username = List.assoc "remote-username" params in
 			let password = List.assoc "remote-password" params in
 			let remote_session = Client.Session.login_with_password remote_rpc username password "1.3" "" in
-			finally
+			let perms = Client.Session.get_rbac_permissions remote_rpc remote_session remote_session in
+
+			(* Check if the destination role has permissions to call sr.scan and
+			 * network.attach_for_vm before proceeding with migration. *)
+			let allowed = ( username = "root" ) || ( List.mem "sr.scan" perms ) && ( List.mem "network.attach_for_vm" perms ) in
+			if not allowed then
+				raise (failwith (Printf.sprintf "User with %s role not allowed to do SXM" (List.hd (List.rev perms))))
+			else finally
 				(fun () ->
 					let host, host_record =
 						let all = Client.Host.get_all_records remote_rpc remote_session in
